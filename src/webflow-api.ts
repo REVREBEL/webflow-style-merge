@@ -7,13 +7,10 @@
  * in the context where this code runs (i.e., inside a Webflow Designer Extension).
  */
 
-// In a real project, you would install `@webflow/designer-api` and import types.
+
 // For example: import type { VariableCollection, ColorVariable, SizeValue } from '@webflow/designer-api';
-// For now, we'll use `any` as a placeholder.
-type VariableCollection = any;
-type Variable = any;
-type SizeValue = { unit: string; value: number };
-type CustomValue = { type: 'custom'; value: string };
+
+
 
 // --- Error Handling ---
 
