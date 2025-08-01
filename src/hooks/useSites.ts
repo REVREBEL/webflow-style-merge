@@ -1,10 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import type { Site } from '@/types/webflow-designer-extensions';
 
-export interface Site {
-  id: string;
-  name: string;
-  // Add other site properties as needed
-}
 
 export function useSites(shouldFetch: boolean = true) {
   const [sites, setSites] = useState<Site[]>([]);
@@ -12,7 +8,7 @@ export function useSites(shouldFetch: boolean = true) {
   const [isError, setIsError] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchSites = async () => {
+  const fetchSites = useCallback(async () => {
     // Skip if we shouldn't fetch yet
     if (!shouldFetch) return;
     
@@ -24,9 +20,9 @@ export function useSites(shouldFetch: boolean = true) {
       // Using mock data since we're removing authentication
       // In a real implementation, you might fetch from an unauthenticated API endpoint
       const mockSites: Site[] = [
-        { id: '1', name: 'Example Site 1' },
-        { id: '2', name: 'Example Site 2' },
-        { id: '3', name: 'Example Site 3' },
+        { id: '1', displayName: 'Example Site 1', createdOn: new Date().toISOString(), lastUpdated: new Date().toISOString(), lastPublished: new Date().toISOString() },
+        { id: '2', displayName: 'Example Site 2', createdOn: new Date().toISOString(), lastUpdated: new Date().toISOString(), lastPublished: new Date().toISOString() },
+        { id: '3', displayName: 'Example Site 3', createdOn: new Date().toISOString(), lastUpdated: new Date().toISOString(), lastPublished: new Date().toISOString() },
       ];
       
       // Simulate network delay
@@ -39,11 +35,11 @@ export function useSites(shouldFetch: boolean = true) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [shouldFetch]);
 
   useEffect(() => {
     fetchSites();
-  }, [shouldFetch]);
+  }, [fetchSites]);
 
   return { sites, isLoading, isError, error, fetchSites };
 }

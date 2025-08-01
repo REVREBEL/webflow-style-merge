@@ -1,13 +1,23 @@
+// src/components/App/AppContent.tsx
+
+import React from 'react';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Box } from "@mui/material";
 import { Navigation } from "../Navigation";
 import Home from "../Home";
 import { CustomCodeDashboard } from "../CustomCode/CustomCodeDashboard";
-import { ElementsDashboard } from "../Elements/ElementsDashboard";
 import { Dashboard } from "../Dashboard";
 import { DevTools } from "../DevTools";
+import { ElementsDashboard } from "../Elements/ElementsDashboard";
 
-function AppContent() {
+
+
+/**
+ * AppContent handles the application's routing and layout structure.
+ * It defines the main navigation and content areas of the application.
+ */
+
+export function AppContent() {
   return (
     <BrowserRouter>
       <Box sx={{ display: "flex", flexDirection: "column", height: "100vh" }}>
@@ -26,4 +36,5 @@ function AppContent() {
   );
 }
 
-export { AppContent };
+
+

@@ -1,11 +1,15 @@
-import { AppBar, Toolbar, Button, Box } from '@mui/material';
-import { Link } from 'react-router-dom';
+import React from 'react';
+import { AppBar, Toolbar, Typography, Button, Box } from "@mui/material";
+import { Link } from "react-router-dom";
 
 export function Navigation() {
   return (
     <AppBar position="static">
       <Toolbar>
-        <Box sx={{ flexGrow: 1, display: 'flex', gap: 2 }}>
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          Webflow Style Merge
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1 }}>
           <Button color="inherit" component={Link} to="/">
             Home
           </Button>

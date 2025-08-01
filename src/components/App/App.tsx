@@ -1,6 +1,7 @@
-import { ThemeProvider } from '@mui/material';
-import { theme } from '../theme';
-import { AppContent } from './AppContent';
+import { ThemeProvider } from "@mui/material";
+import { theme } from "../theme";
+import "./App.css";
+import { AppContent } from "./AppContent";
 
 function App() {
   return (

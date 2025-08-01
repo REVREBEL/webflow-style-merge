@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 
-export function useScriptVersions(sessionToken: string) {
+export function useScriptVersions() {
   const [versions, setVersions] = useState<Record<string, string[]>>({});
   const [isLoading, setIsLoading] = useState(false);
 
@@ -11,12 +11,7 @@ export function useScriptVersions(sessionToken: string) {
         const response = await fetch(
           `${
             import.meta.env.VITE_NEXTJS_API_URL
-          }/api/custom-code/versions/${scriptId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${sessionToken}`,
-            },
-          }
+          }/api/custom-code/versions/${scriptId}`
         );
         const { versions: scriptVersions } = await response.json();
 
@@ -33,7 +28,7 @@ export function useScriptVersions(sessionToken: string) {
         setIsLoading(false);
       }
     },
-    [sessionToken]
+    []
   );
 
   return {

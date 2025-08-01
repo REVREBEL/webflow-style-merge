@@ -19,6 +19,7 @@ const initialCapabilities: Capabilities = {
 const CapabilitiesContext = createContext<Capabilities>(initialCapabilities);
 
 // Hook to use the context
+// eslint-disable-next-line react-refresh/only-export-components
 export const useCapabilities = () => useContext(CapabilitiesContext);
 
 // Define the CapabilitiesProvider props
@@ -42,22 +43,16 @@ export const CapabilitiesProvider: React.FC<CapabilitiesProviderProps> = ({ chil
         return;
       }
 
-      // Get available methods
-      const methods = Object.getOwnPropertyNames(webflow);
-      
       // Update capabilities based on available methods
-      setCapabilities({
-        hasComponents: methods.includes('getAllComponents'),
-        hasStyles: methods.includes('getAllStyles'),
-        hasElements: methods.includes('getAllElements'),
+      const newCapabilities = {
+        hasComponents: typeof webflow.getAllComponents === 'function',
+        hasStyles: typeof webflow.getAllStyles === 'function',
+        hasElements: typeof webflow.getAllElements === 'function',
         isLoading: false
-      });
+      };
       
-      console.log('Webflow API Capabilities:', {
-        hasComponents: methods.includes('getAllComponents'),
-        hasStyles: methods.includes('getAllStyles'),
-        hasElements: methods.includes('getAllElements'),
-      });
+      setCapabilities(newCapabilities);
+      console.log('Webflow API Capabilities:', newCapabilities);
     };
 
     // Check capabilities after a small delay to ensure API is loaded

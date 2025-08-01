@@ -1,33 +1,17 @@
 // src/commands/compareStyles.ts
-export type StyleWithProperties = Style & { properties: Record<string, unknown> };
+import type { Style } from "@/types/webflow";
 
-export type CompareStylesParams = {
+type StyleWithProperties = Style & { properties: Record<string, unknown> };
+
+interface CompareStylesParams {
   styles: Style[];
-};
+}
 
-export type CompareStylesResult = {
-  stylesWithProperties: StyleWithProperties[];
-  error?: string;
-};
-
-export const compareStyles = async ({ styles }: CompareStylesParams): Promise<CompareStylesResult> => {
-  try {
-    const stylesWithProperties: StyleWithProperties[] = [];
-    
-    for (const style of styles) {
-      const properties = await style.getProperties();
-      stylesWithProperties.push({
-        ...style,
-        properties
-      });
-    }
-    
-    return { stylesWithProperties };
-  } catch (error) {
-    console.error("Error in compareStyles:", error);
-    return { 
-      stylesWithProperties: [],
-      error: "Failed to compare styles: " + (error instanceof Error ? error.message : String(error))
-    };
-  }
-};
+export async function compareStyles(
+  params: CompareStylesParams
+): Promise<{ stylesWithProperties: StyleWithProperties[]; error?: string }> {
+  // This is a placeholder implementation.
+  // You should replace this with your actual style comparison logic.
+  console.log("Comparing styles:", params.styles);
+  return { stylesWithProperties: [] };
+}

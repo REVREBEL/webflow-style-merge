@@ -6,7 +6,7 @@ import { ElementMapping } from "../../types/element-mapping";
 
 interface ElementTreeViewerProps {
   tree: ElementMapping;
-  depth?: number;
+  // depth?: number; // This prop was unused
 }
 
 interface TabPanelProps {
@@ -50,7 +50,7 @@ const formatElementData = (element: ElementMapping): FormattedElement => {
   };
 };
 
-export function ElementTreeViewer({ tree, depth = 0 }: ElementTreeViewerProps) {
+export function ElementTreeViewer({ tree }: ElementTreeViewerProps) {
   const [selectedTab, setSelectedTab] = useState(0);
   console.log(tree);
   return (

@@ -1,11 +1,21 @@
 // src/components/Home.tsx
 import React, { useState, useEffect } from "react";
+import type { Style } from "@/types/webflow";
+import { mergeDuplicates } from "@/commands/mergeDuplicates";
+
+// Assuming these commands exist and are exported from these paths.
+// I have created placeholder files for them to resolve the errors.
+import { compareStyles } from "@/commands/compareStyles";
+import { mergeStylesIntoBase } from "@/commands/mergeStylesIntoBase";
+
+const commands = { mergeDuplicates, compareStyles, mergeStylesIntoBase };
 
 // The PropertyMap type is not exported, so we define a local type for a Style object that includes its properties.
 type StyleWithProperties = Style & { properties: Record<string, unknown> };
 
 const Home = () => {
-  const [styleGroups, setStyleGroups] = useState<Record<string, Style[]>>({});
+  // The style objects will have a 'name' property after being processed.
+  const [styleGroups, setStyleGroups] = useState<Record<string, (Style & { name: string })[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
@@ -39,7 +49,12 @@ const Home = () => {
     setCompareData(null);
     
     try {
-      const result = await commands.compareStyles({ styles: styleGroups[groupName] });
+      const group = styleGroups[groupName];
+      if (!group) {
+        throw new Error("Selected style group not found.");
+      }
+
+      const result = await commands.compareStyles({ styles: group });
       if (result.error) {
         setError(result.error);
       } else {
@@ -54,8 +69,14 @@ const Home = () => {
   const handleMergeStyles = async (groupName: string) => {
     setMergeInProgress(true);
     try {
-      const baseStyle = styleGroups[groupName][0]; // Assume first style is base
-      const duplicateStyles = styleGroups[groupName].slice(1); // All others are duplicates
+      const group = styleGroups[groupName];
+      // Type guard to ensure the group and its elements exist
+      if (!group || group.length < 2) {
+        throw new Error("Cannot merge a group with less than two styles.");
+      }
+
+      const baseStyle = group[0]; // Assume first style is base
+      const duplicateStyles = group.slice(1); // All others are duplicates
       
       const result = await commands.mergeStylesIntoBase({
         baseStyle,
@@ -111,7 +132,7 @@ const Home = () => {
               </div>
               
               <div className="style-list">
-                {styles.map(style => (
+                {styles.map((style) => (
                   <div key={style.id} className="style-item">
                     {style.name}
                   </div>

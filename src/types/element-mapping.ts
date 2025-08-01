@@ -2,7 +2,7 @@ export interface ElementMapping {
     id: string;
     type: string;
     styles: StyleMapping[];
-    attributes: { [key: string]: any } | null;
+    attributes: { [key:string]: string | number | boolean } | null;
     children: ElementMapping[] | null;
     settings?: ElementSettings | null;
   }

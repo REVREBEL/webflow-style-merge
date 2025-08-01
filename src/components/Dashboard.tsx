@@ -1,14 +1,14 @@
-import { Container, Typography } from "@mui/material";
+import React from 'react';
+import { Container, Typography, Box } from "@mui/material";
 
 export function Dashboard() {
   return (
     <Container>
-      <Typography variant="h1">Webflow Style Merge</Typography>
-      <Typography variant="h6">
-        Welcome to the Webflow Style Merge tool.
-      </Typography>
-      
-      {/* Your non-auth-dependent dashboard content */}
+      <Typography variant="h1">Dashboard</Typography>
+      <Box sx={{ mt: 2 }}>
+        {/* Your dashboard content goes here */}
+        <Typography>Welcome to the Webflow Style Merge tool!</Typography>
+      </Box>
     </Container>
   );
 }
