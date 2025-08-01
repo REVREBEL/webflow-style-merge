@@ -18,16 +18,154 @@ export type AnyElement = {
   type: string;
 } & Record<string, any>;
 
+
+export interface Style {
+  id: string;
+  getName(): Promise<string>;
+  getProperties(options?: BreakpointAndPseudo): Promise<Record<string, string>>;
+  getProperty(prop: string, options?: BreakpointAndPseudo): Promise<string | { variableId: string } | null>;
+  setProperties(
+    props: Record<string, string | { variableId: string }>,
+    options?: BreakpointAndPseudo
+  ): Promise<void>;
+  setProperty(
+    prop: string,
+    value: string | { variableId: string },
+    options?: BreakpointAndPseudo
+  ): Promise<void>;
+
+  removeProperties(props: string[], options?: BreakpointAndPseudo): Promise<void>;
+  removeProperty(prop: string, options?: BreakpointAndPseudo): Promise<void>;
+  isComboClass(): Promise<boolean>;
+
+  getElements?(): Promise<AnyElement[]>;
+  removeAllProperties?(): Promise<void>;
+}
+
+
+
 export interface WebflowDesignerAPI {
   getAllComponents(): Promise<Component[]>;
   getAllElements(): Promise<AnyElement[]>;
   enterComponent(instance: ComponentInstance): Promise<null>;
   exitComponent(): Promise<null>;
   notify(options: { type: 'Error' | 'Success' | 'Info' | 'Warning', message: string }): Promise<void>;
+
+  // Additions for completeness (if calling from root instead of per-style):
+  getAllStyles(): Promise<Style[]>;
+  getStyleByName(styleName: string): Promise<Style | null>;
+  createStyle(name: string): Promise<Style>;
+  removeStyle(styleId: string): Promise<void>;
+
+  getSelectedElement(): Promise<AnyElement | null>;
+  setExtensionSize(size: 'default' | 'comfortable' | 'large' | { width: number; height: number }): Promise<void>;
+  canForAppMode(modes: string[]): Promise<{ canDesign: boolean; canEdit: boolean }>;
+
+  appModes: {
+    canDesign: string;
+    canEdit: string;
+  };
 }
+
+export interface WebflowStyleService {
+  getStyleProperty(
+    styleName: string,
+    property: string,
+    options?: BreakpointAndPseudo
+  ): Promise<any | null>;
+
+  setStyleProperty(
+    styleName: string,
+    property: string,
+    value: string | { variableId: string },
+    options?: BreakpointAndPseudo
+  ): Promise<void>;
+
+  removeStyleProperty(
+    styleName: string,
+    property: string,
+    options?: BreakpointAndPseudo
+  ): Promise<void>;
+
+  removeAllStyleProperties(
+    styleName: string,
+    options?: BreakpointAndPseudo
+  ): Promise<void>;
+
+  getAllStyles(): Promise<StyleObject[]>;
+
+  createStyleWithProps(
+    name: string,
+    props: Record<string, string>,
+    options?: BreakpointAndPseudo
+  ): Promise<StyleObject | null>;
+
+  isComboClass(styleName: string): Promise<boolean>;
+
+  applyStyleToSelected(style: StyleObject): Promise<void>;
+
+  getStylePropsByName(styleName: string): Promise<Record<string, string> | null>;
+
+  removeStyleByName(styleName: string): Promise<void>;
+
+  canDesign(): Promise<boolean>;
+
+  setExtensionSize(size: 'default' | 'comfortable' | 'large' | { width: number; height: number }): Promise<void>;
+
+  setTextOnSelectedElement(text: string): Promise<void>;
+}
+
+export interface BreakpointAndPseudo {
+  breakpointId?: BreakpointId;
+  pseudo?: PseudoClass;
+}
+
+export type BreakpointId = 'xxl' | 'xl' | 'large' | 'main' | 'medium' | 'small' | 'tiny';
+
+export type PseudoClass =
+  | 'noPseudo'
+  | 'nth-child(odd)'
+  | 'nth-child(even)'
+  | 'first-child'
+  | 'last-child'
+  | 'hover'
+  | 'active'
+  | 'pressed'
+  | 'visited'
+  | 'focus'
+  | 'focus-visible'
+  | 'focus-within'
+  | 'placeholder'
+  | 'empty'
+  | 'before'
+  | 'after';
+
 
 export declare global {
   const webflow: WebflowDesignerAPI;
+}
+
+export type PseudoStateKey =
+  | "noPseudo"
+  | "nth-child(odd)"
+  | "nth-child(even)"
+  | "first-child"
+  | "last-child"
+  | "hover"
+  | "active"
+  | "pressed"
+  | "visited"
+  | "focus"
+  | "focus-visible"
+  | "focus-within"
+  | "placeholder"
+  | "empty"
+  | "before"
+  | "after";
+
+export interface BreakpointAndPseudo {
+  breakpoint?: BreakpointId;
+  pseudo?: PseudoStateKey;
 }
 
 

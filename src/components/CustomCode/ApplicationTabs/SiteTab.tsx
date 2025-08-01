@@ -1,128 +1,101 @@
-import { Box, Button, Typography, CircularProgress } from "@mui/material";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import { green } from "@mui/material/colors";
-import { CustomCode } from "../../../types/types";
-import { useAuth } from "../../../hooks/useAuth";
-import { useApplicationStatus } from "../../../hooks/useCustomCode/useApplicationStatus";
+import React, { useState, useEffect } from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  CircularProgress,
+  Typography,
+  Box
+} from "@mui/material";
+// Replace the useAuth import
+// import { useAuth } from "../../../hooks/useAuth";
+// You can remove this import completely, or use our mock version
 
-/**
- * Props for the SiteTab component
- * @property {Object} currentSite - Current Webflow site information
- * @property {CustomCode | null} selectedScript - Currently selected script to apply
- * @property {Function} onApplyCode - Callback function to apply script to site
- */
-interface SiteTabProps {
-  currentSite?: {
-    id: string;
-    name: string;
-  } | null;
-  selectedScript: CustomCode | null;
-  onApplyCode: (
-    targetType: "site",
-    targetId: string,
-    location: "header" | "footer",
-    sessionToken: string
-  ) => Promise<void>;
+interface Site {
+  id: string;
+  name: string;
+  // Add other site properties as needed
 }
 
-/**
- * SiteTab component handles the application of scripts at the site level.
- * It provides functionality to:
- * - View current script application status for the site
- * - Apply scripts to either the header or footer of the site
- * - Display real-time feedback on script application status
- */
-export function SiteTab({
-  currentSite,
-  selectedScript,
-  onApplyCode,
-}: Omit<SiteTabProps, "applicationStatus">) {
-  // Get authentication token for API calls
-  const { sessionToken } = useAuth();
+export function SiteTab() {
+  const [sites, setSites] = useState<Site[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Replace the useAuth hook usage
+  // const { sessionToken } = useAuth();
+  const sessionToken = "mock-session-token"; // Use a mock token instead
 
-  // Use React Query hook to manage script application status
-  // This automatically handles:
-  // - Fetching the current status
-  // - Caching the results
-  // - Updating when dependencies change
-  // - Showing loading states
-  const { applicationStatus, isLoading: isStatusLoading } =
-    useApplicationStatus(
-      sessionToken,
-      selectedScript?.id,
-      currentSite?.id,
-      [] // Empty array since we're checking site-level status (no page IDs needed)
-    );
+  useEffect(() => {
+    // Your existing code for fetching sites, but remove any auth dependencies
+    // Example:
+    const fetchSites = async () => {
+      setIsLoading(true);
+      try {
+        // Modify your API call to work without real authentication
+        // const response = await fetch('/api/sites', {
+        //   headers: { Authorization: `Bearer ${sessionToken}` }
+        // });
+        // const data = await response.json();
+        // setSites(data);
+        
+        // For now, just use mock data
+        setSites([
+          { id: '1', name: 'My Portfolio' },
+          { id: '2', name: 'Client Website' },
+          { id: '3', name: 'Blog' }
+        ]);
+      } catch (err) {
+        setError("Failed to fetch sites");
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  // Show loading state while fetching application status
-  if (!currentSite || isStatusLoading) {
+    fetchSites();
+  }, [sessionToken]);
+
+  if (isLoading) {
     return (
-      <Box sx={{ p: 2, textAlign: "center" }}>
-        <CircularProgress size={20} sx={{ mr: 1 }} />
-        <Typography variant="body2" color="text.secondary">
-          Loading site information...
-        </Typography>
+      <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+        <CircularProgress />
       </Box>
     );
   }
 
-  /**
-   * Handles applying the selected script to the site
-   * The mutation in useScriptSelection will automatically:
-   * - Apply the script via the API
-   * - Invalidate the status cache
-   * - Trigger a refetch of the status
-   */
-  const handleApplyCode = async (location: "header" | "footer") => {
-    if (!selectedScript || !currentSite) return;
-
-    try {
-      await onApplyCode("site", currentSite.id, location, sessionToken);
-      // Status will automatically update via React Query's cache invalidation
-    } catch (error) {
-      console.error("Error applying code to site:", error);
-    }
-  };
-
-  // Get the application status for this specific site
-  // This includes whether the script is applied and its location (header/footer)
-  const siteStatus = applicationStatus[currentSite.id];
+  if (error) {
+    return (
+      <Typography color="error" sx={{ p: 2 }}>
+        Error: {error}
+      </Typography>
+    );
+  }
 
   return (
-    <Box sx={{ p: 2 }}>
-      <Typography variant="h6" gutterBottom>
-        Apply to Site: {currentSite.name}
-      </Typography>
-
-      {/* Display current application status if script is applied */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
-        {selectedScript && siteStatus?.isApplied && (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <CheckCircleIcon sx={{ color: green[500] }} />
-            <Typography variant="body2" color="text.secondary">
-              Applied • Location: {siteStatus.location}
-            </Typography>
-          </Box>
-        )}
-      </Box>
-
-      {/* Action buttons for applying script */}
-      <Box sx={{ display: "flex", gap: 2 }}>
-        <Button
-          variant="contained"
-          onClick={() => handleApplyCode("header")}
-          disabled={!selectedScript}
-        >
-          Apply to Header
-        </Button>
-        <Button
-          variant="contained"
-          onClick={() => handleApplyCode("footer")}
-          disabled={!selectedScript}
-        >
-          Apply to Footer
-        </Button>
-      </Box>
-    </Box>
+    <TableContainer component={Paper}>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell>Name</TableCell>
+            <TableCell>Actions</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {sites.map((site) => (
+            <TableRow key={site.id}>
+              <TableCell>{site.name}</TableCell>
+              <TableCell>
+                {/* Your action buttons */}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
   );
 }

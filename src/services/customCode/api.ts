@@ -3,12 +3,11 @@ import { ScriptRegistrationRequest, CodeApplication } from "../../types/types";
 
 export const customCodeApi = {
   // Register a new script
-  registerScript: async (params: ScriptRegistrationRequest, token: string) => {
+  registerScript: async (params: ScriptRegistrationRequest) => {
     const response = await fetch(`${base_url}/api/custom-code/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(params),
     });
@@ -16,25 +15,19 @@ export const customCodeApi = {
   },
 
   // Get list of registered scripts
-  getScripts: async (siteId: string, token: string) => {
+  getScripts: async (siteId: string) => {
     const response = await fetch(
-      `${base_url}/api/custom-code/register?siteId=${siteId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
+      `${base_url}/api/custom-code/register?siteId=${siteId}`
     );
     return response.json();
   },
 
   // Apply script to site or page
-  applyScript: async (params: CodeApplication, token: string) => {
+  applyScript: async (params: CodeApplication) => {
     const response = await fetch(`${base_url}/api/custom-code/apply`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(params),
     });
@@ -43,29 +36,19 @@ export const customCodeApi = {
   },
 
   // Get status for site
-  getSiteStatus: async (siteId: string, token: string) => {
+  getSiteStatus: async (siteId: string) => {
     const response = await fetch(
-      `${base_url}/api/custom-code/status?targetType=site&targetId=${siteId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
+      `${base_url}/api/custom-code/status?targetType=site&targetId=${siteId}`
     );
     return response.json();
   },
 
   // Get status for pages
-  getPagesStatus: async (pageIds: string[], token: string) => {
+  getPagesStatus: async (pageIds: string[]) => {
     const response = await fetch(
       `${base_url}/api/custom-code/status?targetType=page&targetIds=${pageIds.join(
         ","
-      )}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
+      )}`
     );
     return response.json();
   },
@@ -73,8 +56,7 @@ export const customCodeApi = {
   // Get batch status request
   getBatchStatus: async (
     siteId: string,
-    pageIds: string[] = [],
-    token: string
+    pageIds: string[] = []
   ) => {
     try {
       // Validate siteId
@@ -85,7 +67,7 @@ export const customCodeApi = {
 
       // If no pageIds provided, just get site status
       if (!pageIds || pageIds.length === 0) {
-        const siteStatus = await customCodeApi.getSiteStatus(siteId, token);
+        const siteStatus = await customCodeApi.getSiteStatus(siteId);
         return siteStatus.result || {};
       }
 
@@ -97,12 +79,12 @@ export const customCodeApi = {
       }
 
       // Get site status
-      const siteStatus = await customCodeApi.getSiteStatus(siteId, token);
+      const siteStatus = await customCodeApi.getSiteStatus(siteId);
 
       // Get pages status in batches
       const pagesStatus = { result: {} };
       for (const batch of pagesBatches) {
-        const batchStatus = await customCodeApi.getPagesStatus(batch, token);
+        const batchStatus = await customCodeApi.getPagesStatus(batch);
         pagesStatus.result = { ...pagesStatus.result, ...batchStatus.result };
       }
 

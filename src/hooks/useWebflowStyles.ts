@@ -1,6 +1,30 @@
 // hooks/useWebflowStyles.ts
-
 import { useCallback } from 'react';
+
+const getAllStyles = useCallback(async (): Promise<Style[]> => {
+  try {
+    return await webflow.getAllStyles() as unknown as Style[];
+  } catch (error) {
+    handleApiError(error, 'Error fetching all styles');
+    return [];
+  }
+}, []);
+
+(async () => {
+  try {
+    const styles = (await webflow.getAllStyles()) as unknown as Style[];
+
+    for (const style of styles) {
+      const props = await style.getProperties();
+      const propKeys = Object.keys(props);
+      if (propKeys.length > 0) {
+        await style.removeProperties(propKeys);
+      }
+    }
+  } catch (err) {
+    console.error('Failed to clear properties from all styles:', err);
+  }
+})();
 
 // Optional: export for reuse elsewhere
 export const BREAKPOINTS = ['xxl', 'xl', 'large', 'main', 'medium', 'small', 'tiny'] as const;
@@ -27,6 +51,7 @@ function handleApiError(error: any, contextMessage: string): void {
   }
   webflow.notify({ type: 'Error', message: userMessage });
 }
+
 
 export function useWebflowStyles() {
   // Capabilities
@@ -136,25 +161,35 @@ export function useWebflowStyles() {
     }
   }, []);
 
-  const removeAllStyleProperties = useCallback(async (
-    styleName: string,
-    options?: { breakpoint?: Breakpoint; pseudo?: Pseudo }
-  ) => {
-    try {
-      const style = await webflow.getStyleByName(styleName);
-      if (style) {
-        const props = await style.getProperties();
-        await style.removeProperties(props, options);
+  const removeAllStyleProperties = useCallback(
+    async (styleName: string, options?: { breakpoint?: Breakpoint; pseudo?: Pseudo }) => {
+      try {
+        const style = await webflow.getStyleByName(styleName);
+        if (!style) return;
+
+        const props = await style.getProperties(options);
+        const propKeys = Object.keys(props);
+        await style.removeProperties(propKeys, options);
+      } catch (error) {
+        handleApiError(error, `Error removing all properties from ${styleName}`);
       }
-    } catch (error) {
-      handleApiError(error, `Error removing all properties from ${styleName}`);
+    },
+    []
+  );
+
+  (async () => {
+    try {
+      const style = await webflow.getStyleByName("gap-xsmall 1");
+      if (style) await webflow.removeStyle(style.id);
+    } catch (err) {
+      console.error("Failed to remove style", err);
     }
-  }, []);
+  })();
 
   const removeStyleByName = useCallback(async (styleName: string) => {
     try {
       const style = await webflow.getStyleByName(styleName);
-      if (style) await webflow.removeStyle(style);
+      if (style) await webflow.removeStyle(style.id);
     } catch (error) {
       handleApiError(error, `Error removing style ${styleName}`);
     }
