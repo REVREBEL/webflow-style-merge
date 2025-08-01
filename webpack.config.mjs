@@ -1,40 +1,38 @@
-import path from "path";
-import { fileURLToPath } from "url";
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const filename = fileURLToPath(import.meta.url);
-const dirname = path.dirname(filename);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export default {
-  entry: "./src/index.tsx",
-  output: {
-    filename: "bundle.js",
-    path: path.resolve(dirname, "public"),
-  },
-  resolve: {
-    extensions: [".ts", ".tsx", ".js", ".json"],
-  },
-  externals: {
-    react: 'React',
-    'react-dom': 'ReactDOM',
-    '@webflow/designer-extension-hooks': 'webflow.designer.hooks',
-    '@webflow/designer-extension-ui': 'webflow.designer.ui',
-  },
+  entry: './src/index.tsx',
   module: {
     rules: [
       {
-        test: /\.(ts|tsx)$/,
+        test: /\.tsx?$/,
+        use: 'ts-loader',
         exclude: /node_modules/,
-        use: "ts-loader",
       },
       {
         test: /\.css$/,
-        use: ["style-loader", "css-loader"],
+        use: ['style-loader', 'css-loader']
+      },
+      {
+        test: /\.(png|svg|jpg|jpeg|gif)$/i,
+        type: 'asset/resource',
       },
     ],
   },
+  resolve: {
+    extensions: ['.tsx', '.ts', '.js'],
+  },
+  output: {
+    filename: 'bundle.js',
+    path: path.resolve(__dirname, 'dist'),
+  },
   devServer: {
-    static: [{ directory: path.join(dirname, "public") }],
+    static: path.join(__dirname, 'dist'),
     compress: true,
-    port: 3000,
+    port: 9000,
   },
 };

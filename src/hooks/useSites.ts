@@ -1,68 +1,49 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from 'react';
 
 export interface Site {
   id: string;
   name: string;
+  // Add other site properties as needed
 }
 
-/*
-  Custom hook for fetching and managing sites from the Next.js API.
-  This hook handles:
-  - Getting current site info from Webflow Designer API
-  - Fetching all accessible sites for the current user
-  - Managing site selection state
-*/
-export function useSites(sessionToken: string, hasClickedFetch: boolean) {
-  const base_url = import.meta.env.VITE_NEXTJS_API_URL;
+export function useSites(shouldFetch: boolean = true) {
+  const [sites, setSites] = useState<Site[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  // Query for current site from Webflow Designer
-  const currentSiteQuery = useQuery({
-    queryKey: ["currentSite"],
-    queryFn: async () => {
-      const siteInfo = await webflow.getSiteInfo();
-      return {
-        id: siteInfo.siteId,
-        name: siteInfo.siteName,
-      };
-    },
-  });
-
-  // Query for all accessible sites
-  const sitesQuery = useQuery({
-    queryKey: ["sites", sessionToken],
-    queryFn: async () => {
-      if (!sessionToken) {
-        return [];
-      }
-
-      const response = await fetch(`${base_url}/api/sites`, {
-        headers: {
-          Authorization: `Bearer ${sessionToken}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch sites: ${response.statusText}`);
-      }
-
-      // Parse response and return sites
-      const data = await response.json();
-      return data.data.sites || [];
-    },
-    enabled: Boolean(sessionToken) && hasClickedFetch,
-  });
-
-  return {
-    // Current site from Webflow Designer
-    currentSite: currentSiteQuery.data,
-    isCurrentSiteLoading: currentSiteQuery.isLoading,
-
-    // All accessible sites
-    sites: sitesQuery.data || [],
-    isLoading: sitesQuery.isLoading,
-    isError: sitesQuery.isError,
-    error: sitesQuery.error,
-    fetchSites: sitesQuery.refetch,
+  const fetchSites = async () => {
+    // Skip if we shouldn't fetch yet
+    if (!shouldFetch) return;
+    
+    setIsLoading(true);
+    setIsError(false);
+    setError(null);
+    
+    try {
+      // Using mock data since we're removing authentication
+      // In a real implementation, you might fetch from an unauthenticated API endpoint
+      const mockSites: Site[] = [
+        { id: '1', name: 'Example Site 1' },
+        { id: '2', name: 'Example Site 2' },
+        { id: '3', name: 'Example Site 3' },
+      ];
+      
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setSites(mockSites);
+    } catch (err) {
+      setIsError(true);
+      setError(err instanceof Error ? err : new Error('An unknown error occurred'));
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchSites();
+  }, [shouldFetch]);
+
+  return { sites, isLoading, isError, error, fetchSites };
 }
