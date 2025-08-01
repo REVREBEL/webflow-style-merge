@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider, Box } from "@mui/material";
-
 import { Navigation } from "./components/Navigation";
 import { Home } from "./components/Home";
 import { CustomCodeDashboard } from "./components/CustomCode/CustomCodeDashboard";
