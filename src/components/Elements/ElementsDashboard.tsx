@@ -55,7 +55,7 @@ export function ElementsDashboard() {
   useEffect(() => {
     webflow.getSelectedElement().then(updateElementTree);
     return webflow.subscribe("selectedelement", updateElementTree);
-  }, []);
+  }, [updateElementTree]);
 
   return (
     <Box sx={{ p: 3 }}>

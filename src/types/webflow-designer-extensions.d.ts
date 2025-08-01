@@ -1,6 +1,7 @@
 
 // src/types/webflow-designer-extensions.d.ts
 
+
 export interface Component {
   id: string;
   getName(): Promise<string>;
@@ -16,18 +17,22 @@ export interface ComponentInstance {
 export type AnyElement = {
   id: string;
   type: string;
-} & Record<string, any>;
+} & Record<string, unknown>;
 
 
 export interface Style {
   id: string;
   getName(): Promise<string>;
-  getProperties(options?: BreakpointAndPseudo): Promise<Record<string, string>>;
+  getElements?: () => Promise<AnyElement[]>;
+  removeAllProperties?: () => Promise<void>;
+  getProperties(options?: BreakpointAndPseudo): Promise<Record<string, string | { variableId: string } | ColorVariable>>;
   getProperty(prop: string, options?: BreakpointAndPseudo): Promise<string | { variableId: string } | null>;
+
   setProperties(
     props: Record<string, string | { variableId: string }>,
     options?: BreakpointAndPseudo
-  ): Promise<void>;
+  ): Promise<null>; 
+
   setProperty(
     prop: string,
     value: string | { variableId: string },
@@ -37,9 +42,6 @@ export interface Style {
   removeProperties(props: string[], options?: BreakpointAndPseudo): Promise<void>;
   removeProperty(prop: string, options?: BreakpointAndPseudo): Promise<void>;
   isComboClass(): Promise<boolean>;
-
-  getElements?(): Promise<AnyElement[]>;
-  removeAllProperties?(): Promise<void>;
 }
 
 
@@ -72,7 +74,7 @@ export interface WebflowStyleService {
     styleName: string,
     property: string,
     options?: BreakpointAndPseudo
-  ): Promise<any | null>;
+  ): Promise<string | { variableId: string } | ColorVariable | null>;
 
   setStyleProperty(
     styleName: string,
@@ -92,17 +94,11 @@ export interface WebflowStyleService {
     options?: BreakpointAndPseudo
   ): Promise<void>;
 
-  getAllStyles(): Promise<StyleObject[]>;
 
-  createStyleWithProps(
-    name: string,
-    props: Record<string, string>,
-    options?: BreakpointAndPseudo
-  ): Promise<StyleObject | null>;
 
   isComboClass(styleName: string): Promise<boolean>;
 
-  applyStyleToSelected(style: StyleObject): Promise<void>;
+
 
   getStylePropsByName(styleName: string): Promise<Record<string, string> | null>;
 
@@ -114,6 +110,15 @@ export interface WebflowStyleService {
 
   setTextOnSelectedElement(text: string): Promise<void>;
 }
+
+export interface ColorVariable {
+  r: number;
+  g: number;
+  b: number;
+  a?: number;
+  type: 'ColorVariable';
+}
+
 
 export interface BreakpointAndPseudo {
   breakpointId?: BreakpointId;
@@ -141,9 +146,9 @@ export type PseudoClass =
   | 'after';
 
 
-export declare global {
-  const webflow: WebflowDesignerAPI;
-}
+//export declare global {
+//  const webflow: WebflowDesignerAPI;
+//}
 
 export type PseudoStateKey =
   | "noPseudo"
@@ -168,39 +173,6 @@ export interface BreakpointAndPseudo {
   pseudo?: PseudoStateKey;
 }
 
-
-// Auth & User Types
-export interface TokenResponse {
-  sessionToken: string;
-}
-
-export interface DecodedToken {
-  user: {
-    firstName: string;
-    email: string;
-  };
-  exp: number;
-}
-
-// JWT Decoded Token Type
-export interface DecodedToken {
-  user: User;
-  exp: number;
-  // Add other JWT claims as needed
-  iat?: number;
-  iss?: string;
-}
-
-export interface User {
-  firstName: string;
-  email: string;
-}
-
-export interface StoredUser extends User {
-  sessionToken: string;
-  exp: number;
-}
-
 // Site Types
 export interface Site {
   id: string;
@@ -215,28 +187,6 @@ export interface ApiResponse<T> {
   data: T;
   message?: string;
   status?: number;
-}
-
-export interface SitesResponse {
-  sites: Site[];
-}
-
-// Component Props Types
-export interface DashboardProps {
-  user: User;
-  sites: Site[];
-  isLoading: boolean;
-  isError: boolean;
-  error: Error | null;
-  onFetchSites: () => void;
-}
-
-export interface DataTableProps {
-  data: Site[];
-}
-
-export interface AuthScreenProps {
-  onAuth: () => void;
 }
 
 // Custom Code Types

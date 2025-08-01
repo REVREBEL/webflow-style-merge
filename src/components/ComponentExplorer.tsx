@@ -1,23 +1,27 @@
+/** @format */
+
 // src/components/ComponentExplorer.tsx
-import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Button, 
-  Heading, 
-  Text, 
-  Stack, 
-  Spinner, 
-  Alert, 
-  AlertIcon, 
-  List, 
-  ListItem,
-  Divider
-} from '@webflow/designer-extension-ui';
+import type { Component, ComponentElement } from "@/types/webflow";
+import React, { useState, useEffect, useRef } from "react";
+
+import { Alert, Box, Button, CircularProgress, Divider, List, ListItemButton, Stack, Typography } from "@mui/material";
+
+interface ComponentDetails {
+  id: string;
+  name: string;
+  rootElement:
+    | {
+        id: string;
+        type: string;
+      }
+    | "No root element found";
+}
 
 interface ComponentInfo {
   id: string;
   name?: string;
-  details?: any;
+  // Can be a string for loading/error messages, or the full details object
+  details?: ComponentDetails | string;
 }
 
 const ComponentExplorer: React.FC = () => {
@@ -26,6 +30,7 @@ const ComponentExplorer: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedComponent, setSelectedComponent] = useState<ComponentInfo | null>(null);
   const [enteringComponent, setEnteringComponent] = useState<boolean>(false);
+  const allComponentsRef = useRef<Component[]>([]);
 
   // Load components on initial render
   useEffect(() => {
@@ -36,38 +41,30 @@ const ComponentExplorer: React.FC = () => {
   const fetchComponents = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      // Get all components from the Webflow Designer API
       const allComponents = await webflow.getAllComponents();
-      
-      // Initial component data with just IDs
-      const componentData: ComponentInfo[] = allComponents.map(component => ({
-        id: component.id
-      }));
-      
-      // Fetch names for each component
-      const componentsWithNames = await Promise.all(
-        componentData.map(async (component) => {
+      allComponentsRef.current = allComponents; // Cache the component objects
+
+      // Directly map over the component objects and fetch their names efficiently
+      const componentsWithData = await Promise.all(
+        allComponents.map(async (component) => {
           try {
-            // Use the component object to call getName
-            const componentObj = allComponents.find(c => c.id === component.id);
-            if (componentObj) {
-              const name = await componentObj.getName();
-              return { ...component, name };
-            }
-            return component;
+            const name = await component.getName();
+            return { id: component.id, name };
           } catch (err) {
             console.error(`Error fetching name for component ${component.id}:`, err);
-            return component;
+            // Return a fallback object so the entire Promise.all doesn't fail
+            return { id: component.id, name: "Unnamed Component" };
           }
         })
       );
-      
-      setComponents(componentsWithNames);
+
+      setComponents(componentsWithData);
     } catch (err) {
-      console.error('Error fetching components:', err);
-      setError('Failed to load components. Please try again.');
+      console.error("Error fetching components:", err);
+      const message = err instanceof Error ? err.message : String(err);
+      setError(`Failed to load components: ${message}`);
     } finally {
       setLoading(false);
     }
@@ -75,35 +72,28 @@ const ComponentExplorer: React.FC = () => {
 
   // Get additional details for a component
   const getComponentDetails = async (component: ComponentInfo) => {
-    setSelectedComponent({ ...component, details: 'Loading details...' });
-    
+    setSelectedComponent({ ...component, details: "Loading details..." });
+
     try {
-      // Find the component object in the original list
-      const allComponents = await webflow.getAllComponents();
-      const componentObj = allComponents.find(c => c.id === component.id);
-      
+      const componentObj = allComponentsRef.current.find((c) => c.id === component.id);
       if (!componentObj) {
-        throw new Error('Component not found');
+        throw new Error("Component not found");
       }
-      
-      // Get root element of the component to include in details
+
       const rootElement = await componentObj.getRootElement();
-      
-      const details = {
+
+      const details: ComponentDetails = {
         id: component.id,
-        name: component.name || 'Unnamed Component',
-        rootElement: rootElement ? {
-          id: rootElement.id,
-          type: rootElement.type
-        } : 'No root element found'
+        name: component.name || "Unnamed Component",
+        rootElement: rootElement ? { id: rootElement.id, type: rootElement.type } : "No root element found",
       };
-      
+
       setSelectedComponent({ ...component, details });
     } catch (err) {
-      console.error('Error fetching component details:', err);
-      setSelectedComponent({ 
-        ...component, 
-        details: 'Error loading details. Please try again.' 
+      console.error("Error fetching component details:", err);
+      setSelectedComponent({
+        ...component,
+        details: "Error loading details. Please try again.",
       });
     }
   };
@@ -111,32 +101,36 @@ const ComponentExplorer: React.FC = () => {
   // Enter a component using Webflow Designer API
   const handleEnterComponent = async (component: ComponentInfo) => {
     setEnteringComponent(true);
-    
-    try {
-      // To enter a component, we need an instance of the component on the page
-      // We'll need to handle the case where no instances exist
-      
-      // Get all elements to find component instances
-      const allElements = await webflow.getAllElements();
-      
-      // Find a component instance with the matching component ID
-      const componentInstance = allElements.find(element => 
-        element.type === 'ComponentInstance' && 
-        // We'd need to check if the instance is for our component
-        // This might require getting the component from the instance
-        element
-      );
-      
-      if (!componentInstance) {
-        throw new Error('No instances of this component found on the current page');
+    setError(null);
+
+    try { 
+    const allElements = await webflow.getAllElements();
+    let targetInstance: ComponentElement | undefined;
+
+    for (const element of allElements) {
+      if (element.type === "ComponentInstance") {
+        const componentElement = element as ComponentElement;
+        const mainComponent = await componentElement.getComponent();
+
+        if (mainComponent?.id === component.id) {
+          targetInstance = componentElement;
+          break;
+        }
       }
-      
+    }
+
+
+      if (!targetInstance) {
+        throw new Error("No instances of this component found on the current page");
+      }
+
       // Enter the component
-      await webflow.enterComponent(componentInstance);
+      await webflow.enterComponent(targetInstance);
       setSelectedComponent(null); // Clear selection after entering
     } catch (err) {
-      console.error('Error entering component:', err);
-      setError(`Failed to enter component: ${err.message}`);
+      console.error("Error entering component:", err);
+      const message = err instanceof Error ? err.message : String(err);
+      setError(`Failed to enter component: ${message}`);
     } finally {
       setEnteringComponent(false);
     }
@@ -145,101 +139,122 @@ const ComponentExplorer: React.FC = () => {
   // Render loading state
   if (loading && components.length === 0) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="200px">
-        <Spinner size="lg" />
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "200px" }}>
+        <CircularProgress />
       </Box>
     );
   }
 
   return (
-    <Box p={4}>
+    <Box sx={{ p: 2 }}>
       <Stack spacing={4}>
-        <Heading size="md">Component Explorer</Heading>
-        
-        {error && (
-          <Alert status="error">
-            <AlertIcon />
-            {error}
-          </Alert>
-        )}
-        
-        <Button 
-          onClick={fetchComponents} 
-          size="sm" 
-          isLoading={loading}
+        <Typography
+          variant="h5"
+          component="h1">
+          Component Explorer
+        </Typography>
+
+        {error && <Alert severity="error">{error}</Alert>}
+
+        <Button
+          onClick={fetchComponents}
+          size="small"
           disabled={loading}
-        >
+          variant="outlined">
           Refresh Components
         </Button>
-        
+
         <Box display="flex">
           {/* Component List */}
-          <Box width="50%" pr={2}>
-            <Heading size="sm" mb={2}>Components ({components.length})</Heading>
-            
+          <Box sx={{ width: "50%", pr: 2 }}>
+            <Typography
+              variant="h6"
+              component="h2"
+              mb={2}>
+              Components ({components.length})
+            </Typography>
+
             {components.length === 0 && !loading ? (
-              <Text>No components found in this project.</Text>
+              <Typography>No components found in this project.</Typography>
             ) : (
-              <List spacing={2}>
+              <List>
                 {components.map((component) => (
-                  <ListItem 
+                  <ListItemButton
                     key={component.id}
-                    p={2}
-                    cursor="pointer"
-                    borderWidth={1}
-                    borderRadius="md"
-                    borderColor={selectedComponent?.id === component.id ? "blue.500" : "gray.200"}
-                    _hover={{ bg: "gray.50" }}
+                    selected={selectedComponent?.id === component.id}
                     onClick={() => getComponentDetails(component)}
-                  >
-                    <Text fontWeight="medium">{component.name || 'Unnamed Component'}</Text>
-                    <Text fontSize="xs" color="gray.500">ID: {component.id}</Text>
-                  </ListItem>
+                    sx={{ display: "block", mb: 1 }}>
+                    <Typography fontWeight="medium">{component.name || "Unnamed Component"}</Typography>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary">
+                      ID: {component.id}
+                    </Typography>
+                  </ListItemButton>
                 ))}
               </List>
             )}
           </Box>
-          
+
           {/* Component Details */}
-          <Box width="50%" pl={2} borderLeftWidth={1} borderColor="gray.200">
-            <Heading size="sm" mb={2}>Component Details</Heading>
-            
+          <Box sx={{ width: "50%", pl: 2, borderLeft: 1, borderColor: "divider" }}>
+            <Typography
+              variant="h6"
+              component="h2"
+              mb={2}>
+              Component Details
+            </Typography>
+
             {selectedComponent ? (
               <Box>
-                <Heading size="xs" mb={1}>{selectedComponent.name || 'Unnamed Component'}</Heading>
-                <Text fontSize="xs" mb={3}>ID: {selectedComponent.id}</Text>
-                
-                <Divider my={2} />
-                
-                {typeof selectedComponent.details === 'string' ? (
-                  <Text>{selectedComponent.details}</Text>
+                <Typography
+                  variant="subtitle1"
+                  fontWeight="bold">
+                  {selectedComponent.name || "Unnamed Component"}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  display="block"
+                  mb={2}>
+                  ID: {selectedComponent.id}
+                </Typography>
+
+                <Divider sx={{ my: 2 }} />
+
+                {typeof selectedComponent.details === "string" ? (
+                  <Typography>{selectedComponent.details}</Typography>
                 ) : (
                   <Box>
-                    <Heading size="xs" mb={1}>Root Element</Heading>
-                    {selectedComponent.details?.rootElement ? (
+                    <Typography variant="subtitle2">Root Element</Typography>
+                    {selectedComponent.details?.rootElement && typeof selectedComponent.details.rootElement === "object" ? (
                       <>
-                        <Text fontSize="xs">Type: {selectedComponent.details.rootElement.type}</Text>
-                        <Text fontSize="xs">ID: {selectedComponent.details.rootElement.id}</Text>
+                        <Typography variant="body2">Type: {selectedComponent.details.rootElement.type}</Typography>
+                        <Typography variant="body2">ID: {selectedComponent.details.rootElement.id}</Typography>
                       </>
                     ) : (
-                      <Text fontSize="xs">No root element information available</Text>
+                      <Typography variant="body2">No root element information is available for this component.</Typography>
                     )}
-                    
-                    <Button 
-                      mt={4}
-                      colorScheme="blue"
-                      size="sm"
-                      isLoading={enteringComponent}
+
+                    <Button
+                      sx={{ mt: 4 }}
+                      variant="contained"
+                      size="small"
                       disabled={enteringComponent}
-                      onClick={() => handleEnterComponent(selectedComponent)}
-                    >
-                      Enter Component
+                      onClick={() => handleEnterComponent(selectedComponent)}>
+                      {enteringComponent ? (
+                        <CircularProgress
+                          size={24}
+                          color="inherit"
+                        />
+                      ) : (
+                        "Enter Component"
+                      )}
                     </Button>
                   </Box>
                 )}
               </Box>
             ) : (
-              <Text>Select a component to view details</Text>
+              <Typography>Select a component to view details</Typography>
             )}
           </Box>
         </Box>

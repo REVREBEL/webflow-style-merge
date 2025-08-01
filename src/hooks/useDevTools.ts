@@ -1,9 +1,4 @@
-interface UseDevToolsProps {
-  logout: () => void;
-  setHasClickedFetch?: (value: boolean) => void;
-}
-
-export function DevTools({ setHasClickedFetch }: { setHasClickedFetch: (value: boolean) => void }) {
+export function useDevTools({ setHasClickedFetch }: { setHasClickedFetch: (value: boolean) => void }) {
   const clearEverything = async () => {
     try {
 
@@ -30,37 +25,18 @@ export function DevTools({ setHasClickedFetch }: { setHasClickedFetch: (value: b
     }
   };
 
+  const getStorageItems = (storage: Storage): Record<string, string> => {
+    return Object.keys(storage).reduce((acc, key) => {
+      acc[key] = storage.getItem(key) || "";
+      return acc;
+    }, {} as Record<string, string>);
+  };
+
   const logStorage = () => {
-    // Create objects to store all storage items
-    const localStorageItems: Record<string, string> = {};
-    const sessionStorageItems: Record<string, string> = {};
-
-    // Get all localStorage items
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key) {
-        localStorageItems[key] = localStorage.getItem(key) || "";
-      }
-    }
-
-    // Get all sessionStorage items
-    for (let i = 0; i < sessionStorage.length; i++) {
-      const key = sessionStorage.key(i);
-      if (key) {
-        sessionStorageItems[key] = sessionStorage.getItem(key) || "";
-      }
-    }
-
     // Log with better formatting
     console.group("Storage Contents");
-    console.log("Local Storage:", localStorageItems);
-    console.log("Session Storage:", sessionStorageItems);
-    console.groupEnd();
-
-    // Log with better formatting
-    console.group("Storage Contents");
-    console.log("Local Storage:", localStorageItems);
-    console.log("Session Storage:", sessionStorageItems);
+    console.log("Local Storage:", getStorageItems(localStorage));
+    console.log("Session Storage:", getStorageItems(sessionStorage));
     console.groupEnd();
   };
 

@@ -1,32 +1,14 @@
 // hooks/useWebflowStyles.ts
+
+/**
+ * @file useWebflowStyles.ts
+ * @description A React hook for interacting with Webflow Designer styles and elements.
+ * @module useWebflowStyles
+ */
+
 import { useCallback } from 'react';
+import type { Style as WebflowStyle } from '@/types/webflow-designer-extensions';
 
-const getAllStyles = useCallback(async (): Promise<Style[]> => {
-  try {
-    return await webflow.getAllStyles() as unknown as Style[];
-  } catch (error) {
-    handleApiError(error, 'Error fetching all styles');
-    return [];
-  }
-}, []);
-
-(async () => {
-  try {
-    const styles = (await webflow.getAllStyles()) as unknown as Style[];
-
-    for (const style of styles) {
-      const props = await style.getProperties();
-      const propKeys = Object.keys(props);
-      if (propKeys.length > 0) {
-        await style.removeProperties(propKeys);
-      }
-    }
-  } catch (err) {
-    console.error('Failed to clear properties from all styles:', err);
-  }
-})();
-
-// Optional: export for reuse elsewhere
 export const BREAKPOINTS = ['xxl', 'xl', 'large', 'main', 'medium', 'small', 'tiny'] as const;
 export const PSEUDOS = [
   'noPseudo', 'nth-child(odd)', 'nth-child(even)', 'first-child', 'last-child',
@@ -52,9 +34,10 @@ function handleApiError(error: any, contextMessage: string): void {
   webflow.notify({ type: 'Error', message: userMessage });
 }
 
-
+/**
+ * React hook exposing Webflow Designer style utilities.
+ */
 export function useWebflowStyles() {
-  // Capabilities
   const canDesign = useCallback(async (): Promise<boolean> => {
     try {
       const capabilities = await webflow.canForAppMode([
@@ -82,12 +65,11 @@ export function useWebflowStyles() {
     }
   }, []);
 
-  // Element
   const setTextOnSelectedElement = useCallback(async (text: string) => {
     try {
       const el = await webflow.getSelectedElement();
-      if (el?.setTextContent) {
-        await el.setTextContent(text);
+      if (el && 'setTextContent' in el && typeof (el as any).setTextContent === 'function') {
+        await (el as any).setTextContent(text);
       } else {
         await webflow.notify({ type: 'Error', message: 'Select an element that can contain text.' });
       }
@@ -96,8 +78,7 @@ export function useWebflowStyles() {
     }
   }, []);
 
-  // Style Operations
-  const getAllStyles = useCallback(async () => {
+  const getAllStyles = useCallback(async (): Promise<any[]> => {
     try {
       return await webflow.getAllStyles();
     } catch (error) {
@@ -106,7 +87,7 @@ export function useWebflowStyles() {
     }
   }, []);
 
-  const getStylePropsByName = useCallback(async (styleName: string) => {
+  const getStylePropsByName = useCallback(async (styleName: string): Promise<Record<string, unknown> | null> => {
     try {
       const style = await webflow.getStyleByName(styleName);
       return style ? await style.getProperties() : null;
@@ -161,35 +142,25 @@ export function useWebflowStyles() {
     }
   }, []);
 
-  const removeAllStyleProperties = useCallback(
-    async (styleName: string, options?: { breakpoint?: Breakpoint; pseudo?: Pseudo }) => {
-      try {
-        const style = await webflow.getStyleByName(styleName);
-        if (!style) return;
-
-        const props = await style.getProperties(options);
-        const propKeys = Object.keys(props);
-        await style.removeProperties(propKeys, options);
-      } catch (error) {
-        handleApiError(error, `Error removing all properties from ${styleName}`);
-      }
-    },
-    []
-  );
-
-  (async () => {
+  const removeAllStyleProperties = useCallback(async (
+    styleName: string,
+    options?: { breakpoint?: Breakpoint; pseudo?: Pseudo }
+  ) => {
     try {
-      const style = await webflow.getStyleByName("gap-xsmall 1");
-      if (style) await webflow.removeStyle(style.id);
-    } catch (err) {
-      console.error("Failed to remove style", err);
+      const style = await webflow.getStyleByName(styleName);
+      if (!style) return;
+      const props = await style.getProperties(options);
+      const propKeys = Object.keys(props);
+      await style.removeProperties(propKeys as any, options);
+    } catch (error) {
+      handleApiError(error, `Error removing all properties from ${styleName}`);
     }
-  })();
+  }, []);
 
   const removeStyleByName = useCallback(async (styleName: string) => {
     try {
       const style = await webflow.getStyleByName(styleName);
-      if (style) await webflow.removeStyle(style.id);
+      if (style) await webflow.removeStyle(style);
     } catch (error) {
       handleApiError(error, `Error removing style ${styleName}`);
     }
@@ -199,10 +170,10 @@ export function useWebflowStyles() {
     styleName: string,
     props: Record<string, string>,
     options?: { breakpoint?: Breakpoint; pseudo?: Pseudo }
-  ) => {
+  ): Promise<WebflowStyle | null> => {
     try {
       const style = await webflow.createStyle(styleName);
-      await style.setProperties(props, options);
+      await style.setProperties(props as any, options);
       return style;
     } catch (error) {
       handleApiError(error, `Error creating style ${styleName}`);
@@ -210,21 +181,21 @@ export function useWebflowStyles() {
     }
   }, []);
 
-  const applyStyleToSelected = useCallback(async (style: Style) => {
+  const applyStyleToSelected = useCallback(async (style: WebflowStyle) => {
     try {
       const el = await webflow.getSelectedElement();
-      if (el?.setStyles) {
-        await el.setStyles([style]);
+      if (el && 'setStyles' in el && typeof (el as any).setStyles === 'function') {
+        await (el as any).setStyles([style]);
       }
     } catch (error) {
       handleApiError(error, 'Error applying style to selected element');
     }
   }, []);
 
-  const isComboClass = useCallback(async (styleName: string) => {
+  const isComboClass = useCallback(async (styleName: string): Promise<boolean> => {
     try {
       const style = await webflow.getStyleByName(styleName);
-      return style ? await style.isComboClass() : false;
+      return !!(style && await style.isComboClass());
     } catch (error) {
       handleApiError(error, `Error checking if ${styleName} is a combo class`);
       return false;

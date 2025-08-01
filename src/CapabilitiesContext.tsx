@@ -19,6 +19,7 @@ const initialCapabilities: Capabilities = {
 const CapabilitiesContext = createContext<Capabilities>(initialCapabilities);
 
 // Hook to use the context
+// eslint-disable-next-line react-refresh/only-export-components
 export const useCapabilities = () => useContext(CapabilitiesContext);
 
 // Define the CapabilitiesProvider props

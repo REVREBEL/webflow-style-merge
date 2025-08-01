@@ -6,7 +6,6 @@ import { getApplicationStatusKey } from "./useApplicationStatus";
 
 interface ScriptQueryParams {
   siteId: string;
-  sessionToken: string;
 }
 
 /**
@@ -41,13 +40,14 @@ export function useScriptSelection() {
    */
   const { data: registeredScripts = [], isLoading: isLoadingScripts } =
     useQuery({
-      queryKey: ["scripts", queryParams?.siteId, queryParams?.sessionToken],
-      queryFn: async () => {
-        if (!queryParams) return [];
-        const response = await customCodeApi.getScripts(
-          queryParams.siteId,
-          queryParams.sessionToken
-        );
+      queryKey: ["scripts", queryParams?.siteId],
+      queryFn: async ({ queryKey }) => {
+        const [, siteId] = queryKey;
+        if (typeof siteId !== "string") {
+          // This path is unreachable due to the `enabled` flag, but adds type safety
+          return [];
+        }
+        const response = await customCodeApi.getScripts(siteId);
         return response.registeredScripts || [];
       },
       enabled: Boolean(queryParams), // Only fetch when we have params
@@ -61,12 +61,10 @@ export function useScriptSelection() {
       targetType,
       targetId,
       location,
-      sessionToken,
     }: {
       targetType: "site" | "page";
       targetId: string | string[];
       location: "header" | "footer";
-      sessionToken: string;
     }) => {
       if (!selectedScript?.id) return;
 
@@ -81,32 +79,26 @@ export function useScriptSelection() {
         if (Array.isArray(targetId)) {
           // Apply to each page with a small delay to avoid rate limits
           for (const id of targetId) {
-            await customCodeApi.applyScript(
-              {
-                scriptId: selectedScript.id,
-                targetType: "page",
-                targetId: id,
-                location,
-                version: selectedScript.version,
-              },
-              sessionToken
-            );
+            await customCodeApi.applyScript({
+              scriptId: selectedScript.id,
+              targetType: "page",
+              targetId: id,
+              location,
+              version: selectedScript.version,
+            });
             // Small delay between requests
             if (targetId.length > 1) {
               await new Promise((resolve) => setTimeout(resolve, 100));
             }
           }
         } else {
-          await customCodeApi.applyScript(
-            {
-              scriptId: selectedScript.id,
-              targetType,
-              targetId,
-              location,
-              version: selectedScript.version,
-            },
-            sessionToken
-          );
+          await customCodeApi.applyScript({
+            scriptId: selectedScript.id,
+            targetType,
+            targetId,
+            location,
+            version: selectedScript.version,
+          });
         }
 
         // Wait a moment for the changes to propagate
@@ -128,12 +120,9 @@ export function useScriptSelection() {
   /**
    * Wrapper function to fetch scripts with required parameters
    */
-  const fetchScripts = useCallback(
-    async (siteId: string, sessionToken: string) => {
-      setQueryParams({ siteId, sessionToken });
-    },
-    []
-  );
+  const fetchScripts = useCallback(async (siteId: string) => {
+    setQueryParams({ siteId });
+  }, []);
 
   return {
     selectedScript,
