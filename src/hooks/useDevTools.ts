@@ -1,19 +1,14 @@
-export function useDevTools({ setHasClickedFetch }: { setHasClickedFetch: (value: boolean) => void }) {
+import { API_BASE_URL } from "../config";
+
+export function useDevTools() {
   const clearEverything = async () => {
     try {
-
       // Clear all storage
       localStorage.clear();
       sessionStorage.clear();
 
-      // Reset React state
-      setHasClickedFetch?.(false);
-
       // Make the API call
-      const base_url = import.meta.env.VITE_NEXTJS_API_URL;
-      const response = await fetch(`${base_url}/api/dev/clear`, {
-        method: "POST",
-      });
+      const response = await fetch(`${API_BASE_URL}/api/dev/clear`, { method: "POST" });
 
       if (!response.ok) throw new Error("Failed to clear database");
       console.log("Everything cleared successfully");

@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 
 interface PageData {
@@ -5,6 +6,13 @@ interface PageData {
   name: string;
   url: string;
 }
+
+interface WebflowPage {
+  id: string;
+  getName: () => Promise<string>;
+  getSlug: () => Promise<string | undefined>;
+}
+
 
 /**
  * Custom hook for fetching pages from Webflow
@@ -16,9 +24,9 @@ export function usePages(siteId: string | undefined) {
     queryFn: async (): Promise<PageData[]> => {
       if (!siteId) return [];
 
-      const pagesData = await webflow.getAllPagesAndFolders();
+      const pagesData: WebflowPage[] = await webflow.getAllPagesAndFolders();
       return Promise.all(
-        pagesData.map(async (page) => ({
+        pagesData.map(async (page: WebflowPage) => ({
           id: page.id,
           name: await page.getName(),
           url: (await page.getSlug()) || "",

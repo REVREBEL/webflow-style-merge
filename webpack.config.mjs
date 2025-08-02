@@ -1,11 +1,18 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
 
+import { fileURLToPath } from 'url';
+import webpack from 'webpack';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load env variables
+const env = dotenv.config().parsed || {};
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const { DefinePlugin } = webpack;
+
 export default {
-  entry: './src/index.tsx',
+  entry: './src/bootstrap.ts',
   module: {
     rules: [
       {
@@ -15,14 +22,19 @@ export default {
       },
       {
         test: /\.css$/,
-        use: ['style-loader', 'css-loader']
-      },
-      {
-        test: /\.(png|svg|jpg|jpeg|gif)$/i,
-        type: 'asset/resource',
+        use: ['style-loader', 'css-loader'],
       },
     ],
   },
+  //
+  plugins: [
+    new DefinePlugin({
+      'import.meta.env.VITE_NEXTJS_API_URL': JSON.stringify(env.VITE_NEXTJS_API_URL || 'http://localhost:3000'),
+      'import.meta.env.DESIGNER_API_URL': JSON.stringify(env.DESIGNER_API_URL || 'http://localhost:1337'),
+      'process.env.VITE_NEXTJS_API_URL': JSON.stringify(env.VITE_NEXTJS_API_URL || 'http://localhost:3000'),
+      'process.env.DESIGNER_API_URL': JSON.stringify(env.DESIGNER_API_URL || 'http://localhost:1337'),
+    })
+  ],
   resolve: {
     extensions: ['.tsx', '.ts', '.js'],
   },
@@ -30,9 +42,9 @@ export default {
     filename: 'bundle.js',
     path: path.resolve(__dirname, 'dist'),
   },
-  devServer: {
-    static: path.join(__dirname, 'dist'),
-    compress: true,
-    port: 9000,
+  externals: {
+    'react': 'React',
+    'react-dom': 'ReactDOM',
   },
 };
+

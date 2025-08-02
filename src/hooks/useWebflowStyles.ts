@@ -7,7 +7,7 @@
  */
 
 import { useCallback } from 'react';
-import type { Style as WebflowStyle } from '@/types/webflow-designer-extensions';
+import type { Style as WebflowStyle } from '@/types/webflow';
 
 export const BREAKPOINTS = ['xxl', 'xl', 'large', 'main', 'medium', 'small', 'tiny'] as const;
 export const PSEUDOS = [
