@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { API_BASE_URL } from "@/config";
 
 export function useScriptVersions() {
   const [versions, setVersions] = useState<Record<string, string[]>>({});
@@ -8,11 +9,7 @@ export function useScriptVersions() {
     async (scriptId: string) => {
       setIsLoading(true);
       try {
-        const response = await fetch(
-          `${
-            import.meta.env.VITE_NEXTJS_API_URL
-          }/api/custom-code/versions/${scriptId}`
-        );
+        const response = await fetch(`${API_BASE_URL}/api/custom-code/versions/${scriptId}`);
         const { versions: scriptVersions } = await response.json();
 
         setVersions((prev) => ({

@@ -1,24 +1,24 @@
 import { Box, Button } from "@mui/material";
+import { useDevTools } from "../hooks/useDevTools";
 
 export function DevTools() {
+  const { clearSession, logStorage } = useDevTools();
   return (
     <Box
       sx={{
-        position: "fixed",
-        bottom: 0,
-        width: "100%",
-        bgcolor: "#f5f5f5",
-        p: 1,
-        borderTop: "1px solid #ddd",
         display: "flex",
-        justifyContent: "space-around",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 2,
+        p: 4,
       }}
     >
-      <Button 
-        variant="outlined"
-        onClick={() => console.log("Reset app state")}
-      >
-        Reset Data
+      <Button variant="outlined" onClick={logStorage}>
+        Log Storage
+      </Button>
+      <Button variant="contained" color="error" onClick={clearSession}>
+        Clear Session & Data
       </Button>
     </Box>
   );

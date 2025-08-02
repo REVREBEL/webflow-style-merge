@@ -2,7 +2,7 @@
 
 // src/components/ComponentExplorer.tsx
 import type { Component, ComponentElement } from "@/types/webflow";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 
 import { Alert, Box, Button, CircularProgress, Divider, List, ListItemButton, Stack, Typography } from "@mui/material";
 
@@ -32,13 +32,8 @@ const ComponentExplorer: React.FC = () => {
   const [enteringComponent, setEnteringComponent] = useState<boolean>(false);
   const allComponentsRef = useRef<Component[]>([]);
 
-  // Load components on initial render
-  useEffect(() => {
-    fetchComponents();
-  }, []);
-
   // Fetch all components from the Webflow Designer API
-  const fetchComponents = async () => {
+  const fetchComponents = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -48,7 +43,7 @@ const ComponentExplorer: React.FC = () => {
 
       // Directly map over the component objects and fetch their names efficiently
       const componentsWithData = await Promise.all(
-        allComponents.map(async (component) => {
+        allComponents.map(async (component: Component) => {
           try {
             const name = await component.getName();
             return { id: component.id, name };
@@ -68,73 +63,83 @@ const ComponentExplorer: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Load components on initial render
+  useEffect(() => {
+    fetchComponents();
+  }, [fetchComponents]);
 
   // Get additional details for a component
-  const getComponentDetails = async (component: ComponentInfo) => {
-    setSelectedComponent({ ...component, details: "Loading details..." });
+  const getComponentDetails = useCallback(
+    async (component: ComponentInfo) => {
+      setSelectedComponent({ ...component, details: "Loading details..." });
 
-    try {
-      const componentObj = allComponentsRef.current.find((c) => c.id === component.id);
-      if (!componentObj) {
-        throw new Error("Component not found");
+      try {
+        const componentObj = allComponentsRef.current.find((c) => c.id === component.id);
+        if (!componentObj) {
+          throw new Error("Component not found");
+        }
+
+        const rootElement = await componentObj.getRootElement();
+
+        const details: ComponentDetails = {
+          id: component.id,
+          name: component.name || "Unnamed Component",
+          rootElement: rootElement ? { id: rootElement.id, type: rootElement.type } : "No root element found",
+        };
+
+        setSelectedComponent({ ...component, details });
+      } catch (err) {
+        console.error("Error fetching component details:", err);
+        setSelectedComponent({
+          ...component,
+          details: "Error loading details. Please try again.",
+        });
       }
-
-      const rootElement = await componentObj.getRootElement();
-
-      const details: ComponentDetails = {
-        id: component.id,
-        name: component.name || "Unnamed Component",
-        rootElement: rootElement ? { id: rootElement.id, type: rootElement.type } : "No root element found",
-      };
-
-      setSelectedComponent({ ...component, details });
-    } catch (err) {
-      console.error("Error fetching component details:", err);
-      setSelectedComponent({
-        ...component,
-        details: "Error loading details. Please try again.",
-      });
-    }
-  };
+    },
+    [] // Dependencies are stable (setters, refs)
+  );
 
   // Enter a component using Webflow Designer API
-  const handleEnterComponent = async (component: ComponentInfo) => {
-    setEnteringComponent(true);
-    setError(null);
+  const handleEnterComponent = useCallback(
+    async (component: ComponentInfo) => {
+      setEnteringComponent(true);
+      setError(null);
 
-    try { 
-    const allElements = await webflow.getAllElements();
-    let targetInstance: ComponentElement | undefined;
+      try {
+        const allElements = await webflow.getAllElements();
+        let targetInstance: ComponentElement | undefined;
 
-    for (const element of allElements) {
-      if (element.type === "ComponentInstance") {
-        const componentElement = element as ComponentElement;
-        const mainComponent = await componentElement.getComponent();
+        for (const element of allElements) {
+          if (element.type === "ComponentInstance") {
+            const componentElement = element as ComponentElement;
+            const mainComponent = await componentElement.getComponent();
 
-        if (mainComponent?.id === component.id) {
-          targetInstance = componentElement;
-          break;
+            if (mainComponent?.id === component.id) {
+              targetInstance = componentElement;
+              break;
+            }
+          }
         }
+
+        if (!targetInstance) {
+          throw new Error("No instances of this component found on the current page");
+        }
+
+        // Enter the component
+        await webflow.enterComponent(targetInstance);
+        setSelectedComponent(null); // Clear selection after entering
+      } catch (err) {
+        console.error("Error entering component:", err);
+        const message = err instanceof Error ? err.message : String(err);
+        setError(`Failed to enter component: ${message}`);
+      } finally {
+        setEnteringComponent(false);
       }
-    }
-
-
-      if (!targetInstance) {
-        throw new Error("No instances of this component found on the current page");
-      }
-
-      // Enter the component
-      await webflow.enterComponent(targetInstance);
-      setSelectedComponent(null); // Clear selection after entering
-    } catch (err) {
-      console.error("Error entering component:", err);
-      const message = err instanceof Error ? err.message : String(err);
-      setError(`Failed to enter component: ${message}`);
-    } finally {
-      setEnteringComponent(false);
-    }
-  };
+    },
+    [] // Dependencies are stable (setters)
+  );
 
   // Render loading state
   if (loading && components.length === 0) {

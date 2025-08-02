@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Site } from '@/types/webflow-designer-extensions';
+import type { Site } from '@/types/types';
 
 
 export function useSites(shouldFetch: boolean = true) {
